@@ -1,16 +1,18 @@
 from django.shortcuts import render, redirect
 from django.urls import reverse
 from django.http import JsonResponse
+from django.conf import settings
 
 import stripe
 
-stripe.api_key = "sk_test_51Ir56QLQCfNIAEkN5UtK8aTD8KMwlRWvNjTMnddxHdkDFIe4NGFaICE2oV8hjiUzyL7ZSUSYMNm5KZezSOTmg7SJ00yH8h0aEo"
+stripe.api_key = settings.STRIPE['secret']
 
-
-# Create your views here.
 
 def index(request):
-    return render(request, 'base/index.html')
+    context = {
+        'stripe_public': settings.STRIPE['public']
+    }
+    return render(request, 'base/index.html', context)
 
 
 def charge(request):
@@ -18,6 +20,7 @@ def charge(request):
         print('Data:', request.POST)
 
         amount = int(request.POST['amount'])
+        print(amount)
 
         customer = stripe.Customer.create(
             email=request.POST['email'],
