@@ -4,6 +4,7 @@ from django.http import JsonResponse
 from django.conf import settings
 
 import stripe
+from . import models
 
 stripe.api_key = settings.STRIPE['secret']
 
@@ -17,19 +18,20 @@ def index(request):
 
 def charge(request):
     if request.method == 'POST':
-        print('Data:', request.POST)
-
         amount = int(request.POST['amount'])
-        print(amount)
+        print(request.POST['stripeToken'])
 
-        customer = stripe.Customer.create(
-            email=request.POST['email'],
-            name=request.POST['nickname'],
-            source=request.POST['stripeToken']
-        )
+        customer = models.StripeCustomer.objects.filter(user=request.user).first()
+        if customer is None:
+            stripe_customer = stripe.Customer.create(
+                email=request.user.email,
+                source=request.POST['stripeToken']
+            )
+
+            customer = models.StripeCustomer.objects.create(user=request.user, stripe_id=stripe_customer.stripe_id)
 
         charge = stripe.Charge.create(
-            customer=customer,
+            customer=customer.stripe_id,
             amount=amount * 100,
             currency='usd',
             description="Donation"
